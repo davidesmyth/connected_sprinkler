@@ -1,0 +1,151 @@
+esphome:
+  name: irrigation
+  platform: ESP8266
+  board: esp01_1m
+
+wifi:
+  ssid: !secret mywifissid
+  password: !secret mywifipw
+  manual_ip:
+    static_ip: 192.168.1.255
+    gateway: 191.168.1.1
+    subnet: 255.255.255.0
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Irrigation Fallback Hotspot"
+    password: "Z3nMA7cF9ZoJ"
+
+# Enable captive portal for fallback wifi
+captive_portal:
+
+# Enable web server
+web_server:
+  port: 80
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  services:
+    - service: run_time_1
+      variables:
+        run_minutes: int
+      then:
+        - switch.turn_on: switch1
+        - delay: !lambda 'return run_minutes*1000*60;'
+        - switch.turn_off: switch1
+    - service: run_time_2
+      variables:
+        run_minutes: int
+      then:
+        - switch.turn_on: switch2
+        - delay: !lambda 'return run_minutes*1000*60;'
+        - switch.turn_off: switch2
+    - service: run_time_3
+      variables:
+        run_minutes: int
+      then:
+        - switch.turn_on: switch3
+        - delay: !lambda 'return run_minutes*1000*60;'
+        - switch.turn_off: switch3
+    - service: run_time_4
+      variables:
+        run_minutes: int
+      then:
+        - switch.turn_on: switch4
+        - delay: !lambda 'return run_minutes*1000*60;'
+        - switch.turn_off: switch4
+
+# Enable Over The Air updates
+ota:
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    name: "Sprinkler Button 1"
+    internal: true
+    on_release:
+      then:
+        - switch.toggle: switch1
+  - platform: gpio
+    pin:
+      number: GPIO9
+      mode: INPUT_PULLUP
+      inverted: True
+    name: "Sprinkler Button 2"
+    internal: true
+    on_release:
+      then:
+        - switch.toggle: switch2
+  - platform: gpio
+    pin:
+      number: GPIO10
+      mode: INPUT_PULLUP
+      inverted: True
+    name: "Sprinkler Button 3"
+    internal: true
+    on_release:
+      then:
+        - switch.toggle: switch3
+  - platform: gpio
+    pin:
+      number: GPIO14
+      mode: INPUT_PULLUP
+      inverted: True
+    name: "Sprinkler Button 4"
+    internal: true
+    on_release:
+      then:
+        - switch.toggle: switch4
+  - platform: status
+    name: "Sprinkler Status"
+
+switch:
+  - platform: gpio
+    name: "Sprinkler Relay 1"
+    icon: "mdi:sprinkler"
+    pin: GPIO12
+    id: switch1
+    interlock: &interlockgroup [switch1, switch2, switch3, switch4]
+    on_turn_on:
+      then:
+        - delay: 4hours
+        - switch.turn_off: switch1
+  - platform: gpio
+    name: "Sprinkler Relay 2"
+    icon: "mdi:sprinkler"
+    pin: GPIO5
+    id: switch2
+    interlock: *interlockgroup
+    on_turn_on:
+      then:
+        - delay: 30minutes
+        - switch.turn_off: switch2
+  - platform: gpio
+    name: "Sprinkler Relay 3"
+    icon: "mdi:sprinkler"
+    pin: GPIO4
+    id: switch3
+    interlock: *interlockgroup
+    on_turn_on:
+      then:
+        - delay: 30minutes
+        - switch.turn_off: switch3
+  - platform: gpio
+    name: "Sprinkler Relay 4"
+    icon: "mdi:sprinkler"
+    pin: GPIO15
+    id: switch4
+    interlock: *interlockgroup
+    on_turn_on:
+      then:
+        - delay: 12hours
+        - switch.turn_off: switch4
+
+status_led:
+  pin: GPIO13
